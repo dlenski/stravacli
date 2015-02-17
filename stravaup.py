@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from stravalib import Client, exc
 from sys import stderr
+from tempfile import NamedTemporaryFile
 import webbrowser, os.path, ConfigParser, gzip
 import argparse
 try:
@@ -67,47 +68,52 @@ else:
 for ii,f in enumerate(args.activities):
     print("Uploading activity from {}...".format(f.name))
 
-    # try to parse activity name, description from file if desired
+    base, ext = os.path.splitext(f.name)
+    gz = False
+    if ext.lower()=='.gz':
+        base, ext = os.path.splitext(base)
+        # un-gzip it in order to parse it
+        cf, uf = f, gzip.GzipFile(fileobj=f, mode='r')
+    else:
+        # gzip it for upload
+        uf, cf = f, NamedTemporaryFile(suffix='.gz', delete=False)
+        gzip.GzipFile(fileobj=cf, mode='w+').writelines(f)
+        uf.seek(0, 0)
+
+    # try to parse activity name, description from file if requested
     name = desc = None
     if not args.no_name:
-        base, ext = os.path.splitext(f.name)
-        if ext.lower()=='.gz':
-            gz = True
-            base, ext = os.path.splitext(base)
-            fobj = gzip.GzipFile(fileobj=afile, mode='r')
-        else:
-            gz = False
-            fobj = f
-
         if ext.lower()=='.gpx':
-            x = etree.parse(fobj)
+            x = etree.parse(uf)
             nametag, desctag = x.find("{*}name"), root.find("{*}desc")
-            if nametag:
-                name = nametag.text
-            if desctag:
-                desc = desctag.text
+            name = nametag and nametag.text
+            desc = desctag and desctag.text
         elif ext.lower()=='.tcx':
-            x = etree.parse(fobj)
+            x = etree.parse(uf)
             notestag = x.find("{*}Activities/{*}Activity/{*}Notes")
             if notestag is not None:
                 name, desc = (notestag.text.split('\n',1)+[None])[:2]
 
-        if gz: fobj.close()
-        f.seek(0, 0)
-
     # upload activity
+    cf.seek(0, 0)
     try:
-        upstat = client.upload_activity(f, ext[1:] + ('.gz' if gz else ''), name, desc, private=args.private)
+        upstat = client.upload_activity(cf, ext[1:] + '.gz', name, desc, private=args.private)
+        if cf is not f:
+            cf.close()
+            os.unlink(cf.name)
+        elif uf is not f:
+            uf.close()
         activity = upstat.wait()
         duplicate = False
-    except Exception as e:
+    except exc.ActivityUploadFailed as e:
         words = e.args[0].split()
         if words[-4:-1]==['duplicate','of','activity']:
             activity = client.get_activity(words[-1])
             duplicate = True
         else:
             raise
-            
+
+    # show results
     uri = "http://strava.com/activities/{:d}".format(activity.id)
     print("  {}{}".format(uri, " (duplicate)" if duplicate else ''), file=stderr)
     if not args.no_popup:

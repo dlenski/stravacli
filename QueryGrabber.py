@@ -18,7 +18,7 @@ class QueryGrabber(HTTPServer):
             HTTPServer.__init__(self, self.address, handler)
         else:
             for port in xrange(1024,65536):
-                try: 
+                try:
                     HTTPServer.__init__(self, ('localhost', port), handler)
                 except socket.error as e:
                     if e.errno!=98: # Address already in use
