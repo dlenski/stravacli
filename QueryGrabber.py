@@ -29,11 +29,3 @@ class QueryGrabber(HTTPServer):
                 raise e
     def root_uri(self):
         return 'http://{}:{:d}'.format(*self.server_address)
-
-
-# client = Client()
-# webserver = SingleUseHTTPServer(address=None, response='<title>Strava auth code received!</title>This window can be closed.')
-# authorize_url = client.authorization_url(client_id=CLIENT_ID, redirect_uri='http://{}:{:d}'.format(*webserver.server_address))
-# webbrowser.open(authorize_url, new=2, autoraise=True)
-# webserver.handle_request()
-# print( webserver.received )

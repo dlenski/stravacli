@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 from __future__ import print_function
 
 from stravalib import Client, exc
@@ -14,12 +15,14 @@ from QueryGrabber import QueryGrabber
 
 #####
 
+allowed_exts = ('.tcx','.gpx','.fit')
+
 p = argparse.ArgumentParser(description='''Uploads activities to Strava.''')
+p.add_argument('activities', nargs='+', type=argparse.FileType("rb"), help="Activity files to upload (plain or gzipped {})".format(', '.join(allowed_exts)))
 p.add_argument('-p', '--private', action='store_true', help='Make activities private')
 p.add_argument('-P', '--no-popup', action='store_true', help="Don't browse to activities after upload.")
-p.add_argument('-N', '--no-name', action='store_true', help="Don't parse name/notes fields of GPX/TCX files.")
+p.add_argument('-N', '--no-parse', action='store_true', help="Don't parse name/description fields from files.")
 p.add_argument('-E', '--env', help='Look for (CLIENT_ID, CLIENT_SECRET) or ACCESS_TOKEN in environment variables rather than ~/.stravacli')
-p.add_argument('activities', nargs='+', type=argparse.FileType("rb"), help="Activity files to upload (.fit, .tcx, or .gpx -- possibly .gz)")
 args = p.parse_args()
 
 #####
@@ -34,12 +37,12 @@ else:
     cp = ConfigParser.ConfigParser()
     cp.read(os.path.expanduser('~/.stravacli'))
     cid = cs = cat = None
-    if not cp.has_section('CLIENT'):
+    if not cp.has_section('API'):
         cid = cs = cat = None
     else:
-        cid = cp.get('CLIENT', 'CLIENT_ID') if 'client_id' in cp.options('CLIENT') else None
-        cs = cp.get('CLIENT', 'CLIENT_SECRET') if 'client_secret' in cp.options('CLIENT') else None
-        cat = cp.get('CLIENT', 'ACCESS_TOKEN') if 'access_token' in cp.options('CLIENT') else None
+        cid = cp.get('API', 'CLIENT_ID') if 'client_id' in cp.options('API') else None
+        cs = cp.get('API', 'CLIENT_SECRET') if 'client_secret' in cp.options('API') else None
+        cat = cp.get('API', 'ACCESS_TOKEN') if 'access_token' in cp.options('API') else None
 
 if cat:
     client = Client(cat)
@@ -53,15 +56,16 @@ elif cid and cs:
     cat=client.exchange_code_for_token(client_id=cid,client_secret=cs,code=webserver.received['code'])
     print("Authorization complete.")
     if not args.env:
-        cp.set('CLIENT','CLIENT_ID', cid)
-        cp.set('CLIENT','CLIENT_SECRET', cs)
-        cp.set('CLIENT','ACCESS_TOKEN', cat)
+        cp.add_section('API')
+        cp.set('API','CLIENT_ID', cid)
+        cp.set('API','CLIENT_SECRET', cs)
+        cp.set('API','ACCESS_TOKEN', cat)
         cp.write(open(os.path.expanduser('~/.stravacli'),"w"))
 else:
     if args.env:
         p.error('(CLIENT_ID, CLIENT_SECRET) or (ACCESS_TOKEN) must be specified in environment variables')
     else:
-        p.error('(CLIENT_ID, CLIENT_SECRET) or (ACCESS_TOKEN) must be specified in [CLIENT] section of ~/.stravacli')
+        p.error('(CLIENT_ID, CLIENT_SECRET) or (ACCESS_TOKEN) must be specified in [API] section of ~/.stravacli')
 
 #####
 
@@ -80,9 +84,12 @@ for ii,f in enumerate(args.activities):
         gzip.GzipFile(fileobj=cf, mode='w+').writelines(f)
         uf.seek(0, 0)
 
+    if ext.lower() not in allowed_exts:
+        p.error("  Don't know how to handle extension {} (allowed are {}).".format(ext, ', '.join(allowed_exts)))
+
     # try to parse activity name, description from file if requested
     name = desc = None
-    if not args.no_name:
+    if not args.no_parse:
         if ext.lower()=='.gpx':
             x = etree.parse(uf)
             nametag, desctag = x.find("{*}name"), root.find("{*}desc")
