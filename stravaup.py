@@ -11,8 +11,6 @@ try:
 except ImportError:
     import xml.etree.ElementTree as etree
 
-from QueryGrabber import QueryGrabber
-
 #####
 
 allowed_exts = ('.tcx','.gpx','.fit')
@@ -22,50 +20,44 @@ p.add_argument('activities', nargs='+', type=argparse.FileType("rb"), help="Acti
 p.add_argument('-p', '--private', action='store_true', help='Make activities private')
 p.add_argument('-P', '--no-popup', action='store_true', help="Don't browse to activities after upload.")
 p.add_argument('-N', '--no-parse', action='store_true', help="Don't parse name/description fields from files.")
-p.add_argument('-E', '--env', help='Look for (CLIENT_ID, CLIENT_SECRET) or ACCESS_TOKEN in environment variables rather than ~/.stravacli')
+p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
 args = p.parse_args()
 
 #####
 
 # Authorize Strava
 
+cid = 3163 # CLIENT_ID
 if args.env:
-    cid = os.environ.get('CLIENT_ID')
-    cs = os.environ.get('CLIENT_SECRET')
     cat = os.environ.get('ACCESS_TOKEN')
 else:
     cp = ConfigParser.ConfigParser()
     cp.read(os.path.expanduser('~/.stravacli'))
-    cid = cs = cat = None
-    if not cp.has_section('API'):
-        cid = cs = cat = None
-    else:
-        cid = cp.get('API', 'CLIENT_ID') if 'client_id' in cp.options('API') else None
-        cs = cp.get('API', 'CLIENT_SECRET') if 'client_secret' in cp.options('API') else None
+    cat = None
+    if cp.has_section('API'):
         cat = cp.get('API', 'ACCESS_TOKEN') if 'access_token' in cp.options('API') else None
 
-if cat:
+authorized = False
+while not authorized:
     client = Client(cat)
-elif cid and cs:
-    print("Authorizing Strava access via web browser...", file=stderr)
-    client = Client()
-    webserver = QueryGrabber(response='<title>Strava auth code received!</title>This window can be closed.')
-    authorize_url = client.authorization_url(client_id=cid, redirect_uri=webserver.root_uri(), scope='write')
-    webbrowser.open_new_tab(authorize_url)
-    webserver.handle_request()
-    cat=client.exchange_code_for_token(client_id=cid,client_secret=cs,code=webserver.received['code'])
-    print("Authorization complete.")
-    if not args.env:
-        cp.add_section('API')
-        cp.set('API','CLIENT_ID', cid)
-        cp.set('API','CLIENT_SECRET', cs)
-        cp.set('API','ACCESS_TOKEN', cat)
-        cp.write(open(os.path.expanduser('~/.stravacli'),"w"))
-else:
-    if args.env:
-        p.error('(CLIENT_ID, CLIENT_SECRET) or (ACCESS_TOKEN) must be specified in environment variables')
+    try:
+        athlete = client.get_athlete()
+    except Exception as e:
+        print("NOT AUTHORIZED")
+        print("Need Strava API access token. Launching web browser to obtain one.", file=stderr)
+        client = Client()
+        authorize_url = client.authorization_url(client_id=cid, redirect_uri='http://stravacli-dlenski.rhcloud.com/auth', scope='view_private,write')
+        webbrowser.open_new_tab(authorize_url)
+        client.access_token = cat = raw_input("Enter access token: ")
     else:
-        p.error('(CLIENT_ID, CLIENT_SECRET) or (ACCESS_TOKEN) must be specified in [API] section of ~/.stravacli')
+        authorized = True
+        if not cp.has_section('API'):
+            cp.add_section('API')
+        if not 'ACCESS_TOKEN' in cp.options('API') or cp.get('API', 'ACCESS_TOKEN', None)!=cat:
+            cp.set('API', 'ACCESS_TOKEN', cat)
+            cp.write(open(os.path.expanduser('~/.stravacli'),"w"))
+
+print("Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
 
 #####
 
