@@ -12,22 +12,27 @@ Authorizing a command-line application to use the Strava API is quite
 tedious; their API is clearly geared towards web-based apps running on
 a central server.
 
-In order to use the Strava API, you must get an API key for your
-application at: http://www.strava.com/settings/api
+### `server` branch
+The `server` branch of this program generates an API access token
+using my own server running on OpenShift.
+
+### `master` branch
+With the `master` branch, you must get your own API key from: http://www.strava.com/settings/api
 
 With that done, you'll need to add your `client_id` and
 `client_secret` values to `~/.stravacli`:
 ````ini
 [API]
-client_id = 3163
+client_id = 1234
 client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 ```
 
 The first time you run [`stravaup`](#stravaup), it will launch a web
 browser to display Strava's application authorization page, and a
 small web server on localhost to capture the authorization code output
-from that page. (See [`QueryGrabber.py`](QueryGrabber.py) for the
-implementation of this very minimal web server.)
+from that page. (See
+[`QueryGrabber.py`](http://github.com/dlenski/stravacli/blob/master/QueryGrabber.py)
+for the implementation of this very minimal web server.)
 
 ## <a name="stravaup">Uploading activities</a>
 
