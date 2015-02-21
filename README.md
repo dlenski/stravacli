@@ -16,11 +16,11 @@ a central server.
 it will automatically direct you to step 2 below.)
 
 1. If you already have a Strava API [`access token`](http://strava.github.io/api/v3/oauth/#post-token), skip to step 3.
-2. If not, go to [the `stravacli` authorization page on Strava.com](https://www.strava.com/oauth/authorize?approval_prompt=force&redirect_uri=http%3A%2F%2Fstravacli-dlenski.rhcloud.com%2Fauth&response_type=code&client_id=3163&scope=view_private%2Cwrite). After you authorize the `stravacli` app to access your account on Strava, you'll be redirected to a simple server I'm running on OpenShift, which will present you with your `access_token`: ![Image](http://snag.gy/jJZcF.jpg)
-3. Put the access token in `~/.stravacli` as directed.
+2. If not, go to [the simple web app I'm running on OpenShift](//stravacli-dlenski.rhcloud.com), which will handle the OAuth process and present you with your `access_token`. (The web app does **not** retain or store your access token in any way.)
+3. Put the access token in `~/.stravacli` as directed: ![Image](http://snag.gy/jJZcF.jpg)
 
 ### `server` branch
-The `server` branch of this program will allow you to roll-your-own API access tokens. First, you must get your own Strava API key from: [http://www.strava.com/settings/api]
+The `server` branch of this program will allow you to roll-your-own API access tokens without depending on my OpenShift web app. First, you must get your own Strava API key from: [http://www.strava.com/settings/api]
 
 With that done, you'll need to add your `client_id` and `client_secret` values to `~/.stravacli`:
 ````ini
@@ -31,7 +31,7 @@ client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 
 The first time you run [`stravaup`](#stravaup), it will launch a web
 browser to display Strava's application authorization page, and a
-small web server on localhost to capture the authorization code output
+small web server on `localhost` to capture the authorization code output
 from that page. (See
 [`QueryGrabber.py`](http://github.com/dlenski/stravacli/blob/server/QueryGrabber.py)
 for the implementation of this very minimal web server.)
