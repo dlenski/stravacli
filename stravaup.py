@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from stravalib import Client, exc
+import requests
 from sys import stderr
 from tempfile import NamedTemporaryFile
 import webbrowser, os.path, ConfigParser, gzip
@@ -42,6 +43,10 @@ while not authorized:
     client = Client(cat)
     try:
         athlete = client.get_athlete()
+    except requests.exceptions.ConnectionError as e:
+        print("COULD NOT CONNECT")
+        print(e)
+        raise SystemExit
     except Exception as e:
         print("NOT AUTHORIZED")
         print("Need Strava API access token. Launching web browser to obtain one.", file=stderr)
