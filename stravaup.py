@@ -22,13 +22,22 @@ allowed_exts = {'.tcx': lambda v: '<TrainingCenterDatabase' in v[:200],
 p = argparse.ArgumentParser(description='''Uploads activities to Strava.''')
 p.add_argument('activities', nargs='*', type=argparse.FileType("rb"), default=(stdin,),
                help="Activity files to upload (plain or gzipped {})".format(', '.join(allowed_exts)))
-p.add_argument('-p', '--private', action='store_true', help='Make activities private')
 p.add_argument('-P', '--no-popup', action='store_true', help="Don't browse to activities after upload.")
-p.add_argument('-N', '--no-parse', action='store_true', help="Don't parse name/description fields from files.")
 p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
-p.add_argument('-t', '--type', choices=allowed_exts, default=None,
-               help='Force files to be interpreted as being of given type (default is to autodetect based on name, or contents for stdin')
+g = p.add_argument_group('Activity file details')
+g.add_argument('-p', '--private', action='store_true', help='Make activities private')
+g.add_argument('-t', '--type', choices=allowed_exts, default=None,
+               help='Force files to be interpreted as being of given type (default is to autodetect based on name, or contents for stdin)')
+g.add_argument('-x', '--xml-desc', action='store_true', help="Parse name/description fields from GPX and TCX files.")
+g.add_argument('-T', '--title', help='Activity title')
+g.add_argument('-D', '--desc', dest='description', help='Activity description')
 args = p.parse_args()
+
+if args.xml_desc:
+    if args.title:
+        p.error('argument -T/--title not allowed with argument -x/--xml-desc')
+    if args.description:
+        p.error('argument -D/--desc not allowed with argument -x/--xml-desc')
 
 #####
 
@@ -105,24 +114,26 @@ for ii,f in enumerate(args.activities):
         print("Uploading {} activity from {}...".format(ext+gz, f.name))
 
     # try to parse activity name, description from file if requested
-    name = desc = None
-    if not args.no_parse:
+    if args.xml_desc:
         uf.seek(0, 0)
         if ext.lower()=='.gpx':
             x = etree.parse(uf)
             nametag, desctag = x.find("{*}name"), x.find("{*}desc")
-            name = nametag and nametag.text
+            title = nametag and nametag.text
             desc = desctag and desctag.text
         elif ext.lower()=='.tcx':
             x = etree.parse(uf)
             notestag = x.find("{*}Activities/{*}Activity/{*}Notes")
             if notestag is not None:
-                name, desc = (notestag.text.split('\n',1)+[None])[:2]
+                title, desc = (notestag.text.split('\n',1)+[None])[:2]
+    else:
+        title = args.title
+        desc = args.description
 
     # upload activity
     try:
         cf.seek(0, 0)
-        upstat = client.upload_activity(cf, ext[1:] + '.gz', name, desc, private=args.private)
+        upstat = client.upload_activity(cf, ext[1:] + '.gz', title, desc, private=args.private)
         activity = upstat.wait()
         duplicate = False
     except exc.ActivityUploadFailed as e:

@@ -39,29 +39,43 @@ for the implementation of this very minimal web server.)
 ## <a name="stravaup">Uploading activities</a>
 
 ````bash
-$ stravaup.py [OPTIONS] activity files
+$ stravaup.py [OPTIONS] [activity files]
 ````
 
 Activity files must have TCX, GPX, or FIT extensions (or same followed
-by `.gz`). Files will be automatically compressed with `gzip` &mdash; if not
-already in compressed format &mdash; to reduce upload time.
+by `.gz`). Files will be automatically compressed with `gzip` &mdash;
+if not already in such format &mdash; to reduce upload time. If no
+activity files are specified, the default is to read from `stdin`, so
+`stravaup.py` can be used as a pipe, and to autodetect the file type
+based on its contents.
 
-By default, the program will look for top-level
+If `-x`/`--xml-desc` is specified, the program will look for top-level
 [`<name>`](http://www.topografix.com/gpx_manual.asp#name) and
 [`<desc>`](http://www.topografix.com/gpx_manual.asp#desc) tags in GPX
-files, and use those for the Strava activity name and description. In
+files, and use those for the Strava activity title and description. In
 TCX files, it looks for the `<Activity><Notes>` tag and [uses the first
 line from that field for the activity name, and subsequent lines for
 the activity description](https://github.com/cpfair/tapiriik/issues/99).
-This behavior may be disabled with `-N`/`--no-parse`.
+
+You can also specify title and description from the command line with
+the `-T`/`--title` and `-D`/`--desc` options.
 
 Activities will be uploaded to Strava and opened in your desktop web
 browser (unless `-P`/`--no-popup` is specified).
 
 Options:
 
-    -p, --private      Make activities private
     -P, --no-popup     Don't browse to activities after upload.
-    -N, --no-parse     Don't parse name/description fields from files.
     -E ENV, --env ENV  Look for (CLIENT_ID, CLIENT_SECRET) or ACCESS_TOKEN in
                        environment variables rather than ~/.stravacli
+
+    -p, --private         Make activities private
+    -t {.gpx,.fit,.tcx}, --type {.gpx,.fit,.tcx}
+                          Force files to be interpreted as being of given type
+                          (default is to autodetect based on name, or contents
+                          for stdin)
+    -x, --xml-desc        Parse name/description fields from GPX and TCX files.
+    -T TITLE, --title TITLE
+                          Activity title
+    -D DESCRIPTION, --desc DESCRIPTION
+                          Activity description
