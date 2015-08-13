@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile
 import webbrowser, os.path, ConfigParser, gzip
 import argparse
 from cStringIO import StringIO
+import requests
 try:
     from lxml import etree
 except ImportError:
