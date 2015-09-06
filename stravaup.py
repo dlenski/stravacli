@@ -31,6 +31,11 @@ g.add_argument('-t', '--type', choices=allowed_exts, default=None,
 g.add_argument('-x', '--xml-desc', action='store_true', help="Parse name/description fields from GPX and TCX files.")
 g.add_argument('-T', '--title', help='Activity title')
 g.add_argument('-D', '--desc', dest='description', help='Activity description')
+g.add_argument('-A', '--activity-type', default=None, help='''Type of activity. If not specified, the default value is taken
+                                                              from user profile. Supported values:
+                                                              ride, run, swim, workout, hike, walk, nordicski, alpineski,
+                                                              backcountryski, iceskate, inlineskate, kitesurf, rollerski,
+                                                              windsurf, workout, snowboard, snowshoe''')
 args = p.parse_args()
 
 if args.xml_desc:
@@ -133,7 +138,7 @@ for ii,f in enumerate(args.activities):
     # upload activity
     try:
         cf.seek(0, 0)
-        upstat = client.upload_activity(cf, ext[1:] + '.gz', title, desc, private=args.private)
+        upstat = client.upload_activity(cf, ext[1:] + '.gz', title, desc, private=args.private, activity_type=args.activity_type)
         activity = upstat.wait()
         duplicate = False
     except exc.ActivityUploadFailed as e:
