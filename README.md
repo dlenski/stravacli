@@ -63,19 +63,26 @@ the `-T`/`--title` and `-D`/`--desc` options.
 Activities will be uploaded to Strava and opened in your desktop web
 browser (unless `-P`/`--no-popup` is specified).
 
-Options:
+##Options
 
-    -P, --no-popup     Don't browse to activities after upload.
-    -E ENV, --env ENV  Look for (CLIENT_ID, CLIENT_SECRET) or ACCESS_TOKEN in
-                       environment variables rather than ~/.stravacli
+  -h, --help            show the help message and exit
+  -P, --no-popup        Don't browse to activities after upload.
+  -E ENV, --env ENV     Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli
 
-    -p, --private         Make activities private
-    -t {.gpx,.fit,.tcx}, --type {.gpx,.fit,.tcx}
-                          Force files to be interpreted as being of given type
-                          (default is to autodetect based on name, or contents
-                          for stdin)
-    -x, --xml-desc        Parse name/description fields from GPX and TCX files.
-    -T TITLE, --title TITLE
-                          Activity title
-    -D DESCRIPTION, --desc DESCRIPTION
-                          Activity description
+  -p, --private         Make activities private
+  -t {.gpx,.fit,.tcx}, --type {.gpx,.fit,.tcx}
+                        Force files to be interpreted as being of given type
+                        (default is to autodetect based on name, or contents
+                        for stdin)
+  -x, --xml-desc        Parse name/description fields from GPX and TCX files.
+  -T TITLE, --title TITLE
+                        Activity title
+  -D DESCRIPTION, --desc DESCRIPTION
+                        Activity description
+  -A ACTIVITY_TYPE, --activity-type ACTIVITY_TYPE
+                        Type of activity. If not specified, the default value
+                        is taken from user profile. Supported values: ride,
+                        run, swim, workout, hike, walk, nordicski, alpineski,
+                        backcountryski, iceskate, inlineskate, kitesurf,
+                        rollerski, windsurf, workout, snowboard, snowshoe
+
