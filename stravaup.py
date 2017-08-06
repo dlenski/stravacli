@@ -79,7 +79,7 @@ while True:
             cp.write(open(os.path.expanduser('~/.stravacli'),"w"))
         break
 
-print("Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
+print(u"Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
 
 #####
 
@@ -98,7 +98,7 @@ for ii,f in enumerate(args.activities):
                 gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
             for ext, checker in allowed_exts.items():
                 if checker(contents):
-                    print("Uploading {} activity from stdin...".format(ext+gz))
+                    print(u"Uploading {} activity from stdin...".format(ext+gz))
                     break
             else:
                 p.error("Could not determine file type of stdin")
@@ -116,7 +116,7 @@ for ii,f in enumerate(args.activities):
             gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
         if ext.lower() not in allowed_exts:
             p.error("Don't know how to handle extension {} (allowed are {}).".format(ext, ', '.join(allowed_exts)))
-        print("Uploading {} activity from {}...".format(ext+gz, f.name))
+        print(u"Uploading {} activity from {}...".format(ext+gz, f.name))
 
     # try to parse activity name, description from file if requested
     if args.xml_desc:
@@ -151,6 +151,6 @@ for ii,f in enumerate(args.activities):
 
     # show results
     uri = "http://strava.com/activities/{:d}".format(activity.id)
-    print("  {}{}".format(uri, " (duplicate)" if duplicate else ''), file=stderr)
+    print(u"  {}{}".format(uri, " (duplicate)" if duplicate else ''), file=stderr)
     if not args.no_popup:
         webbrowser.open_new_tab(uri)
