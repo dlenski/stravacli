@@ -14,7 +14,8 @@ except ImportError:
     import xml.etree.ElementTree as etree
 
 #####
-def Run(arguments = None):
+
+def main(args=None):
     allowed_exts = {'.tcx': lambda v: '<TrainingCenterDatabase' in v[:200],
                     '.gpx': lambda v: '<gpx' in v[:200],
                     '.fit': lambda v: v[8:12]=='.FIT'}
@@ -36,7 +37,7 @@ def Run(arguments = None):
                                                                   ride, run, swim, workout, hike, walk, nordicski, alpineski,
                                                                   backcountryski, iceskate, inlineskate, kitesurf, rollerski,
                                                                   windsurf, workout, snowboard, snowshoe''')
-    args = p.parse_args(arguments)
+    args = p.parse_args(args)
 
     if args.xml_desc:
         if args.title:
@@ -156,4 +157,4 @@ def Run(arguments = None):
             webbrowser.open_new_tab(uri)
 
 if (__name__ == '__main__'):
-    Run()
+    main()
