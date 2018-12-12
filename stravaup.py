@@ -107,27 +107,29 @@ def main(args=None):
                 base, ext = 'activity', args.type
         else:
             base, ext = os.path.splitext(f.name if args.type is None else 'activity.'+args.type)
+            ext = ext.lower()
             # autodetect based on extensions
-            if ext.lower()=='.gz':
+            if ext=='.gz':
                 base, ext = os.path.splitext(base)
+                ext = ext.lower()
                 # un-gzip it in order to parse it
                 gz, cf, uf = '.gz', f, None if args.no_parse else gzip.GzipFile(fileobj=f, mode='rb')
             else:
                 gz, uf, cf = '', f, NamedTemporaryFile(suffix='.gz')
                 gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
-            if ext.lower() not in allowed_exts:
+            if ext not in allowed_exts:
                 p.error("Don't know how to handle extension {} (allowed are {}).".format(ext, ', '.join(allowed_exts)))
             print(u"Uploading {} activity from {}...".format(ext+gz, f.name))
 
         # try to parse activity name, description from file if requested
         if args.xml_desc:
             uf.seek(0, 0)
-            if ext.lower()=='.gpx':
+            if ext=='.gpx':
                 x = etree.parse(uf)
                 nametag, desctag = x.find("{*}name"), x.find("{*}desc")
                 title = nametag and nametag.text
                 desc = desctag and desctag.text
-            elif ext.lower()=='.tcx':
+            elif ext=='.tcx':
                 x = etree.parse(uf)
                 notestag = x.find("{*}Activities/{*}Activity/{*}Notes")
                 if notestag is not None:
