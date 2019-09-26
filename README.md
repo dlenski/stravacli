@@ -17,13 +17,19 @@ it will automatically direct you to step 2 below.)
 
 1. If you already have a Strava API [`access token`](http://strava.github.io/api/v3/oauth/#post-token), skip to step 3.
 2. If not, go to [the simple web app I'm running on OpenShift](//stravacli-dlenski.rhcloud.com), which will handle the OAuth process and present you with your `access_token`. (The web app does **not** retain or store your access token in any way.)
-3. Put the access token in `~/.stravacli` as directed: ![Image](http://snag.gy/jJZcF.jpg)
+3. Put the access token in `~/.stravacli` as directed:
+
+```ini
+[API]
+access_token = f00f00f00f00f00f00f00f00f00f00f00f00f00f
+```
 
 ### `server` branch
 The `server` branch of this program will allow you to roll-your-own API access tokens without depending on my OpenShift web app. First, you must get your own Strava API key from: [http://www.strava.com/settings/api]
 
 With that done, you'll need to add your `client_id` and `client_secret` values to `~/.stravacli`:
-````ini
+
+```ini
 [API]
 client_id = 1234
 client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
@@ -63,7 +69,7 @@ the `-T`/`--title` and `-D`/`--desc` options.
 Activities will be uploaded to Strava and opened in your desktop web
 browser (unless `-P`/`--no-popup` is specified).
 
-##Options
+## Options
 
 ```
 -h, --help            show the help message and exit
