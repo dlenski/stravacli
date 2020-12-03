@@ -12,7 +12,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as etree
 
-from QueryGrabber import QueryGrabber
+from .QueryGrabber import QueryGrabber
     
 #####
 

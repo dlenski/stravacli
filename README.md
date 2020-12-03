@@ -1,10 +1,21 @@
 # stravacli
 Command-line client for Strava
 
-## Requirements
+## Installation
 
-Uses [`hozn/stravalib`](//github.com/hozn/stravalib) to interact
-with Strava using its [REST-based API v3](//strava.github.io/api/v3).
+Requires Python 3. Uses [`hozn/stravalib`](//github.com/hozn/stravalib) to interact with Strava using its [REST-based API v3](//strava.github.io/api/v3).
+
+Install with:
+
+```
+$ pip3 install https://github.com/dlenski/stravacli/archive/master.zip
+...
+$ stravaup
+usage: stravaup [-h] [-c] [-P] [-E ENV] [-p] [-t {.tcx,.gpx,.fit}] [-x]
+                [-T TITLE] [-D DESCRIPTION] [-A ACTIVITY_TYPE]
+                [activities [activities ...]]
+stravaup: error: specify either activity files or -c/--stdin (but not both)
+```
 
 ## Application authorization
 
@@ -37,7 +48,7 @@ client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 ## Uploading activities
 
 ```bash
-$ stravaup.py [OPTIONS] [activity files]
+$ stravaup [OPTIONS] [activity files]
 ```
 
 Activity files must have TCX, GPX, or FIT extensions (or same followed
@@ -64,9 +75,9 @@ browser (unless `-P`/`--no-popup` is specified).
 ## Options
 
 ```
-usage: stravaup.py [-h] [-c] [-P] [-E ENV] [-p] [-t {.tcx,.gpx,.fit}] [-x]
-                   [-T TITLE] [-D DESCRIPTION] [-A ACTIVITY_TYPE]
-                   [activities [activities ...]]
+usage: stravaup [-h] [-c] [-P] [-E ENV] [-p] [-t {.tcx,.gpx,.fit}] [-x]
+                [-T TITLE] [-D DESCRIPTION] [-A ACTIVITY_TYPE]
+                [activities [activities ...]]
 
 Uploads activities to Strava.
 
