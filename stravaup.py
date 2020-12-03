@@ -20,8 +20,9 @@ def main(args=None):
                     '.fit': lambda v: v[8:12]==b'.FIT'}
 
     p = argparse.ArgumentParser(description='''Uploads activities to Strava.''')
-    p.add_argument('activities', nargs='*', type=argparse.FileType("rb"), default=(stdin.buffer,),
+    p.add_argument('activities', nargs='*', type=argparse.FileType("rb"),
                    help="Activity files to upload (plain or gzipped {})".format(', '.join(allowed_exts)))
+    p.add_argument('-c', '--stdin', action='store_true', help="Read activity file from standard input")
     p.add_argument('-P', '--no-popup', action='store_true', help="Don't browse to activities after upload.")
     p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
     g = p.add_argument_group('Activity file details')
@@ -38,6 +39,10 @@ def main(args=None):
                                                                   windsurf, workout, snowboard, snowshoe''')
     args = p.parse_args(args)
 
+    if (args.activities and args.stdin) or (not args.activities and not args.stdin):
+        p.error('specify either activity files or -c/--stdin (but not both)')
+    elif args.stdin:
+        args.activities = (stdin.buffer,)
     if args.xml_desc:
         if args.title:
             p.error('argument -T/--title not allowed with argument -x/--xml-desc')
