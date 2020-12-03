@@ -1,12 +1,11 @@
-#!/usr/bin/env python2
-from __future__ import print_function
+#!/usr/bin/env python3
 
 from stravalib import Client, exc
 from sys import stderr, stdin
 from tempfile import NamedTemporaryFile
-import webbrowser, os.path, ConfigParser, gzip
+import webbrowser, os.path, configparser, gzip
 import argparse
-from cStringIO import StringIO
+from io import BytesIO
 import requests
 try:
     from lxml import etree
@@ -16,12 +15,12 @@ except ImportError:
 #####
 
 def main(args=None):
-    allowed_exts = {'.tcx': lambda v: '<TrainingCenterDatabase' in v[:200],
-                    '.gpx': lambda v: '<gpx' in v[:200],
-                    '.fit': lambda v: v[8:12]=='.FIT'}
+    allowed_exts = {'.tcx': lambda v: b'<TrainingCenterDatabase' in v[:200],
+                    '.gpx': lambda v: b'<gpx' in v[:200],
+                    '.fit': lambda v: v[8:12]==b'.FIT'}
 
     p = argparse.ArgumentParser(description='''Uploads activities to Strava.''')
-    p.add_argument('activities', nargs='*', type=argparse.FileType("rb"), default=(stdin,),
+    p.add_argument('activities', nargs='*', type=argparse.FileType("rb"), default=(stdin.buffer,),
                    help="Activity files to upload (plain or gzipped {})".format(', '.join(allowed_exts)))
     p.add_argument('-P', '--no-popup', action='store_true', help="Don't browse to activities after upload.")
     p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
@@ -53,7 +52,7 @@ def main(args=None):
     if args.env:
         cat = os.environ.get('ACCESS_TOKEN')
     else:
-        cp = ConfigParser.ConfigParser()
+        cp = configparser.ConfigParser()
         cp.read(os.path.expanduser('~/.stravacli'))
         cat = None
         if cp.has_section('API'):
@@ -77,21 +76,22 @@ def main(args=None):
                 cp.add_section('API')
             if not 'ACCESS_TOKEN' in cp.options('API') or cp.get('API', 'ACCESS_TOKEN', None)!=cat:
                 cp.set('API', 'ACCESS_TOKEN', cat)
-                cp.write(open(os.path.expanduser('~/.stravacli'),"w"))
+                with open(os.path.expanduser('~/.stravacli'),"w") as cf:
+                    cp.write(cf)
             break
 
-    print(u"Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
+    print("Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
 
     #####
 
     for ii,f in enumerate(args.activities):
-        if f is stdin:
+        if f is stdin.buffer:
             fn = 'stdin'
             contents = f.read()
-            f = StringIO(contents)
+            f = BytesIO(contents)
             if args.type is None:
                 # autodetect gzip and extension based on content
-                if contents.startswith('\x1f\x8b'):
+                if contents.startswith(b'\x1f\x8b'):
                     gz, cf, uf = '.gz', f, gzip.GzipFile(fileobj=f, mode='rb')
                     contents = uf.read()
                 else:
@@ -99,7 +99,7 @@ def main(args=None):
                     gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
                 for ext, checker in allowed_exts.items():
                     if checker(contents):
-                        print(u"Uploading {} activity from stdin...".format(ext+gz))
+                        print("Uploading {} activity from stdin...".format(ext+gz))
                         break
                 else:
                     p.error("Could not determine file type of stdin")
@@ -119,7 +119,7 @@ def main(args=None):
                 gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
             if ext not in allowed_exts:
                 p.error("Don't know how to handle extension {} (allowed are {}).".format(ext, ', '.join(allowed_exts)))
-            print(u"Uploading {} activity from {}...".format(ext+gz, f.name))
+            print("Uploading {} activity from {}...".format(ext+gz, f.name))
 
         # try to parse activity name, description from file if requested
         if args.xml_desc:
@@ -154,7 +154,7 @@ def main(args=None):
 
         # show results
         uri = "http://strava.com/activities/{:d}".format(activity.id)
-        print(u"  {}{}".format(uri, " (duplicate)" if duplicate else ''), file=stderr)
+        print("  {}{}".format(uri, " (duplicate)" if duplicate else ''), file=stderr)
         if not args.no_popup:
             webbrowser.open_new_tab(uri)
 
