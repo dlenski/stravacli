@@ -1,1 +1,1 @@
-stravalib>=0.5
+stravalib>=0.10

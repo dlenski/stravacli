@@ -12,6 +12,8 @@ try:
 except ImportError:
     import xml.etree.ElementTree as etree
 
+from QueryGrabber import QueryGrabber
+    
 #####
 
 def main(args=None):
@@ -50,18 +52,19 @@ def main(args=None):
             p.error('argument -D/--desc not allowed with argument -x/--xml-desc')
 
     #####
-
     # Authorize Strava
+    #####
 
-    cid = 3163 # CLIENT_ID
+    cid = cs = cat = None
     if args.env:
         cat = os.environ.get('ACCESS_TOKEN')
     else:
         cp = configparser.ConfigParser()
         cp.read(os.path.expanduser('~/.stravacli'))
-        cat = None
         if cp.has_section('API'):
-            cat = cp.get('API', 'ACCESS_TOKEN') if 'access_token' in cp.options('API') else None
+            cid = cp.get('API', 'CLIENT_ID', fallback=None)
+            cs = cp.get('API', 'CLIENT_SECRET', fallback=None)
+            cat = cp.get('API', 'ACCESS_TOKEN', fallback=None)
 
     while True:
         client = Client(cat)
@@ -70,12 +73,25 @@ def main(args=None):
         except requests.exceptions.ConnectionError:
             p.error("Could not connect to Strava API")
         except Exception as e:
-            print("NOT AUTHORIZED", file=stderr)
-            print("Need Strava API access token. Launching web browser to obtain one.", file=stderr)
-            client = Client()
-            authorize_url = client.authorization_url(client_id=cid, redirect_uri='http://stravacli-dlenski.rhcloud.com/auth', scope='view_private,write')
-            webbrowser.open_new_tab(authorize_url)
-            client.access_token = cat = raw_input("Enter access token: ")
+            print("NOT AUTHORIZED. Need Strava API access token.", file=stderr)
+            if cat:
+                print("Your Strava API access_token was not accepted. Try generating a new one. See details at:\n"
+                      "    https://github.com/dlenski/stravacli/blob/master/README.md", file=stderr)
+            elif cid and cs:
+                print("Launching web browser to obtain one for client_id=%s." % cid, file=stderr)
+                client = Client()
+                webserver = QueryGrabber(response='<title>Strava auth code received!</title>This window can be closed.')
+                authorize_url = client.authorization_url(client_id=cid, redirect_uri=webserver.root_uri(), scope=['activity:read_all', 'activity:write'])
+                webbrowser.open_new_tab(authorize_url)
+                webserver.handle_request()
+                token = client.exchange_code_for_token(client_id=cid, client_secret=cs, code=webserver.received['code'])
+                cat = token['access_token']
+                print("Got access token %s." % cat, file=stderr)
+            else:
+                print("You need to add either a Strava API access_token, or application client_id/client_secret\n"
+                      "pair, to ~/.stravacli. Details at:\n"
+                      "    https://github.com/dlenski/stravacli/blob/master/README.md", file=stderr)
+                p.exit(1)
         else:
             if not cp.has_section('API'):
                 cp.add_section('API')
