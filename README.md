@@ -1,9 +1,10 @@
 # stravacli
-Command-line client for Strava
+Command-line clients for Strava
 
 ## Installation
 
-Requires Python 3. Uses [`hozn/stravalib`](//github.com/hozn/stravalib) to interact with Strava using its [REST-based API v3](//strava.github.io/api/v3).
+Requires Python 3. Uses [`hozn/stravalib`](//github.com/hozn/stravalib) to interact with Strava using its [REST-based API v3](//strava.github.io/api/v3),
+and optionally [`pR0Ps/stravaweblib`](//github.com/pR0Ps/stravaweblib) to download activities.
 
 Install with:
 
@@ -15,6 +16,11 @@ usage: stravaup [-h] [-c] [-P] [-E ENV] [-p] [-t {.tcx,.gpx,.fit}] [-x]
                 [-T TITLE] [-D DESCRIPTION] [-A ACTIVITY_TYPE]
                 [activities [activities ...]]
 stravaup: error: specify either activity files or -c/--stdin (but not both)
+
+$ usage: stravadown [-h] [-t {tcx,gpx,original}] [-N] [-E ENV]
+                    [-c | -d DIRECTORY]
+                    activities [activities ...]
+stravadown: error: the following arguments are required: activities
 ```
 
 ## Application authorization
@@ -38,8 +44,17 @@ access_token = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 client_id = 1234
 client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 ```
+3. Strava's REST-based API does not allow downloading activity files, so it must be augmented with web-based scraping. For
+this, [`pR0Ps/stravaweblib`](//github.com/pR0Ps/stravaweblib) must be installed, and you must
+also put your registered email address and base64-encoded password in `~/.stravacli`:
+```ini
+[Web]
+email = my.name@me.com
+password_b64 = cGFzc3dvcmQ=
+```
 
-  The first time you run [`stravaup`](#uploading-activities), it will launch a web
+  The first time you run [`stravaup`](#uploading-activities) or [`stravadown`](#downloading-activities),
+  it will launch a web
   browser to display Strava's application authorization page, and a
   small web server on `localhost` to capture the authorization code output
   from that page. (See [`QueryGrabber.py`](//github.com/dlenski/stravacli/blob/server/QueryGrabber.py)
@@ -55,7 +70,7 @@ Activity files must have TCX, GPX, or FIT extensions (or same followed
 by `.gz`). Files will be automatically compressed with `gzip` —
 if not already in such format — to reduce upload time. If no
 activity files are specified, the default is to read from `stdin`, so
-`stravaup.py` can be used as a pipe, and to autodetect the file type
+`stravaup` can be used as a pipe, and to autodetect the file type
 based on its contents.
 
 If `-x`/`--xml-desc` is specified, the program will look for top-level
@@ -72,7 +87,7 @@ the `-T`/`--title` and `-D`/`--desc` options.
 Activities will be uploaded to Strava and opened in your desktop web
 browser (unless `-P`/`--no-popup` is specified).
 
-## Options
+### Options
 
 ```
 usage: stravaup [-h] [-c] [-P] [-E ENV] [-p] [-t {.tcx,.gpx,.fit}] [-x]
@@ -109,4 +124,42 @@ Activity file details:
                         run, swim, workout, hike, walk, nordicski, alpineski,
                         backcountryski, iceskate, inlineskate, kitesurf,
                         rollerski, windsurf, workout, snowboard, snowshoe
+```
+
+## Downloading activities
+
+```bash
+$ stravadown [OPTIONS] [activity IDs]
+```
+
+This will download activity files from Strava. By default, it will
+download them in the same format they were originally uploaded, but
+TCX or GPX format may also be requested with `-t tcx` or `-t gpx`.
+It is only possible to download your _own_ activities, not activities
+recorded by other athletes.
+
+### Options
+
+```
+usage: stravadown [-h] [-t {tcx,gpx,original}] [-N] [-c | -d DIRECTORY]
+                  activities [activities ...]
+
+Downloads activities from Strava.
+
+positional arguments:
+  activities            Activity IDs to download
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t {tcx,gpx,original}, --type {tcx,gpx,original}
+                        Format in which to download activities (default is
+                        their original format
+  -N, --number          Label activity files by number, rather than by their
+                        titles
+  -E ENV, --env ENV     Look for ACCESS_TOKEN in environment variable rather
+                        than ~/.stravacli
+  -c, --stdout          Write activity to standard input
+  -d DIRECTORY, --directory DIRECTORY
+                        Directory in which to store activity files (default is
+                        current directory)
 ```

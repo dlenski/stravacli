@@ -14,7 +14,7 @@ if not sys.version_info[0] == 3:
 setup(
     name="stravacli",
     version="0.0.1",
-    description="Command-line client for Strava",
+    description="Command-line clients for Strava",
     author="Daniel Lenski",
     author_email="dlenski@gmail.com",
     license='GPL v3 or later',
@@ -24,6 +24,9 @@ setup(
     },
     url="https://github.com/dlenski/stravacli",
     packages=['stravacli'],
-    entry_points={'console_scripts': ['stravaup=stravacli.stravaup:main']},
+    entry_points={'console_scripts': [
+        'stravaup=stravacli.stravaup:main',
+        'stravadown=stravacli.stravadown:main'
+    ]},
     test_suite='nose.collector',
 )
