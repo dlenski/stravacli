@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 
-from stravalib import Client, exc
 from sys import stderr, stdin
 from tempfile import NamedTemporaryFile
-import webbrowser, os.path, configparser, gzip
+import webbrowser
+import gzip
 import argparse
+import os
 from io import BytesIO
-import requests
 try:
     from lxml import etree
 except ImportError:
     import xml.etree.ElementTree as etree
 
-from .QueryGrabber import QueryGrabber
-    
+from stravalib import exc
+from .client_helper import get_authorized_client
+
 #####
+
 
 def main(args=None):
     allowed_exts = {'.tcx': lambda v: b'<TrainingCenterDatabase' in v[:200],
                     '.gpx': lambda v: b'<gpx' in v[:200],
-                    '.fit': lambda v: v[8:12]==b'.FIT'}
+                    '.fit': lambda v: v[8:12] == b'.FIT'}
 
     p = argparse.ArgumentParser(description='''Uploads activities to Strava.''')
     p.add_argument('activities', nargs='*', type=argparse.FileType("rb"),
@@ -52,62 +54,21 @@ def main(args=None):
             p.error('argument -D/--desc not allowed with argument -x/--xml-desc')
 
     #####
-    # Authorize Strava
+    # Authorize Strava client
     #####
 
-    cid = cs = cat = None
-    if args.env:
-        cat = os.environ.get('ACCESS_TOKEN')
-    else:
-        cp = configparser.ConfigParser()
-        cp.read(os.path.expanduser('~/.stravacli'))
-        if cp.has_section('API'):
-            cid = cp.get('API', 'CLIENT_ID', fallback=None)
-            cs = cp.get('API', 'CLIENT_SECRET', fallback=None)
-            cat = cp.get('API', 'ACCESS_TOKEN', fallback=None)
+    try:
+        client = get_authorized_client(os.environ.get('ACCESS_TOKEN'), need_web_client=False)
+    except RuntimeError as e:
+        p.error(e.args[0])
 
-    while True:
-        client = Client(cat)
-        try:
-            athlete = client.get_athlete()
-        except requests.exceptions.ConnectionError:
-            p.error("Could not connect to Strava API")
-        except Exception as e:
-            print("NOT AUTHORIZED. Need Strava API access token.", file=stderr)
-            if cat:
-                print("Your Strava API access_token was not accepted. Try generating a new one. See details at:\n"
-                      "    https://github.com/dlenski/stravacli/blob/master/README.md", file=stderr)
-            elif cid and cs:
-                print("Launching web browser to obtain one for client_id=%s." % cid, file=stderr)
-                client = Client()
-                webserver = QueryGrabber(response='<title>Strava auth code received!</title>This window can be closed.')
-                authorize_url = client.authorization_url(client_id=cid, redirect_uri=webserver.root_uri(), scope=['activity:read_all', 'activity:write'])
-                webbrowser.open_new_tab(authorize_url)
-                webserver.handle_request()
-                token = client.exchange_code_for_token(client_id=cid, client_secret=cs, code=webserver.received['code'])
-                cat = token['access_token']
-                print("Got access token %s." % cat, file=stderr)
-            else:
-                print("You need to add either a Strava API access_token, or application client_id/client_secret\n"
-                      "pair, to ~/.stravacli. Details at:\n"
-                      "    https://github.com/dlenski/stravacli/blob/master/README.md", file=stderr)
-                p.exit(1)
-        else:
-            if not cp.has_section('API'):
-                cp.add_section('API')
-            if not 'ACCESS_TOKEN' in cp.options('API') or cp.get('API', 'ACCESS_TOKEN', None)!=cat:
-                cp.set('API', 'ACCESS_TOKEN', cat)
-                with open(os.path.expanduser('~/.stravacli'),"w") as cf:
-                    cp.write(cf)
-            break
-
+    athlete = client.get_athlete()
     print("Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
 
     #####
 
-    for ii,f in enumerate(args.activities):
+    for ii, f in enumerate(args.activities):
         if f is stdin.buffer:
-            fn = 'stdin'
             contents = f.read()
             f = BytesIO(contents)
             if args.type is None:
@@ -120,17 +81,17 @@ def main(args=None):
                     gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
                 for ext, checker in allowed_exts.items():
                     if checker(contents):
-                        print("Uploading {} activity from stdin...".format(ext+gz))
+                        print("Uploading {} activity from stdin...".format(ext + gz))
                         break
                 else:
-                    p.error("Could not determine file type of stdin")
+                    p.error("Could not determine file type of <stdin>")
             else:
                 base, ext = 'activity', args.type
         else:
-            base, ext = os.path.splitext(f.name if args.type is None else 'activity.'+args.type)
+            base, ext = os.path.splitext(f.name if args.type is None else 'activity.' + args.type)
             ext = ext.lower()
             # autodetect based on extensions
-            if ext=='.gz':
+            if ext == '.gz':
                 base, ext = os.path.splitext(base)
                 ext = ext.lower()
                 # un-gzip it in order to parse it
@@ -140,21 +101,22 @@ def main(args=None):
                 gzip.GzipFile(fileobj=cf, mode='w+b').writelines(f)
             if ext not in allowed_exts:
                 p.error("Don't know how to handle extension {} (allowed are {}).".format(ext, ', '.join(allowed_exts)))
-            print("Uploading {} activity from {}...".format(ext+gz, f.name))
+            print("Uploading {} activity from {}...".format(ext + gz, f.name))
 
         # try to parse activity name, description from file if requested
         if args.xml_desc:
             uf.seek(0, 0)
-            if ext=='.gpx':
+            if ext == '.gpx':
                 x = etree.parse(uf)
                 nametag, desctag = x.find("{*}name"), x.find("{*}desc")
                 title = nametag and nametag.text
                 desc = desctag and desctag.text
-            elif ext=='.tcx':
+            elif ext == '.tcx':
                 x = etree.parse(uf)
                 notestag = x.find("{*}Activities/{*}Activity/{*}Notes")
                 if notestag is not None:
-                    title, desc = (notestag.text.split('\n',1)+[None])[:2]
+                    title, *desc = notestag.text.split('\n', 1)
+                    desc = desc[0] if desc else None
         else:
             title = args.title
             desc = args.description
@@ -167,7 +129,7 @@ def main(args=None):
             duplicate = False
         except exc.ActivityUploadFailed as e:
             words = e.args[0].split()
-            if words[-4:-1]==['duplicate','of','activity']:
+            if words[-4:-1] == ['duplicate', 'of', 'activity']:
                 activity = client.get_activity(words[-1])
                 duplicate = True
             else:
@@ -179,5 +141,6 @@ def main(args=None):
         if not args.no_popup:
             webbrowser.open_new_tab(uri)
 
-if (__name__ == '__main__'):
+
+if __name__ == '__main__':
     main()
