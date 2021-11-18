@@ -135,8 +135,10 @@ $ stravadown [OPTIONS] [activity IDs]
 This will download activity files from Strava. By default, it will
 download them in the same format they were originally uploaded, but
 TCX or GPX format may also be requested with `-t tcx` or `-t gpx`.
-It is only possible to download your _own_ activities, not activities
-recorded by other athletes.
+
+It is generally only possible to download your _own_ activities, not
+activities recorded by other athletes, but the `--scrape` option
+_may_ allow you to circumvent this in some cases.
 
 ### Options
 
@@ -154,6 +156,9 @@ optional arguments:
   -t {tcx,gpx,original}, --type {tcx,gpx,original}
                         Format in which to download activities (default is
                         their original format
+  -s, --scrape          Use HTML scrape-based method to download activities
+                        (will allow you to download activities other than your
+                        own)
   -N, --number          Label activity files by number, rather than by their
                         titles
   -E ENV, --env ENV     Look for ACCESS_TOKEN in environment variable rather
