@@ -132,6 +132,9 @@ def main(args=None):
             if words[-4:-1] == ['duplicate', 'of', 'activity']:
                 activity = client.get_activity(words[-1])
                 duplicate = True
+            elif e.args[0].startswith('The file is empty'):
+                print('  ({} is empty, ignored)'.format(f.name))
+                continue
             else:
                 raise
 
