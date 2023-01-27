@@ -32,7 +32,7 @@ server.
 (If you run a `stravacli` utility without an access token in `~/.stravacli`
 already, it will direct you to this README.)
 
-1. If you already have a Strava API [`access token`](//strava.github.io/api/v3/oauth/#post-token), put it in `~/.stravacli`:
+1. If you have a currently-active Strava API [`access token`](//strava.github.io/api/v3/oauth/#post-token) (note that they are ephemeral, and only last about 6 hours), put it in `~/.stravacli`:
 ```ini
 [API]
 access_token = f00f00f00f00f00f00f00f00f00f00f00f00f00f
