@@ -1,1 +1,1 @@
-stravalib>=0.10
+git+https://github.com/dlenski/stravaweblib@scrape_activity_data#egg=stravalib

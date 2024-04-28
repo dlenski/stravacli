@@ -17,19 +17,27 @@ def main(args=None):
                    help="Activity IDs to download")
     p.add_argument('-t', '--type', type=str.lower, choices=('tcx', 'gpx', 'original'), default='original',
                    help='Format in which to download activities (default is their original format')
-    p.add_argument('-N', '--number', action='store_true',
-                   help='Label activity files by number, rather than by their titles')
     p.add_argument('-s', '--scrape', action='store_true',
                    help='Use HTML scrape-based method to download activities (will allow you to download activities other than your own)')
-    p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
-    x = p.add_mutually_exclusive_group()
+    p.add_argument('-E', '--env', action='store_true', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
+    g = p.add_argument_group('Output options')
+    x = g.add_mutually_exclusive_group()
     x.add_argument('-c', '--stdout', action='store_true', help="Write activity to standard input")
     x.add_argument('-d', '--directory', default='',
                    help="Directory in which to store activity files (default is current directory)")
+    x.add_argument('-N', '--number', action='store_true',
+                   help='Label activity files by number, rather than by their titles')
     args = p.parse_args(args)
 
     if args.stdout and len(args.activities) != 1:
         p.error('specify only one activity with -c/--stdout')
+    if args.env:
+        try:
+            cat = os.environ['ACCESS_TOKEN']
+        except KeyError:
+            p.error('Must set ACCESS_TOKEN environment variable to use -E/--env')
+    else:
+        cat = None
 
     fmt = getattr(DataFormat, args.type.upper())
     scrape_fmt = DataFormat.TCX if fmt == DataFormat.ORIGINAL else fmt
@@ -39,7 +47,7 @@ def main(args=None):
     #####
 
     try:
-        client = get_authorized_client(os.environ.get('ACCESS_TOKEN'), need_web_client=True)
+        client = get_authorized_client(cat, need_web_client=True)
     except RuntimeError as e:
         p.error(e.args[0])
 
@@ -69,20 +77,21 @@ def main(args=None):
         if try_scrape:
             af = client.scrape_activity_data(activity_id, scrape_fmt)
 
+        got_ext = os.path.splitext(af.filename)[1][1:]
         if args.stdout:
             f = stdout.buffer
         else:
-            if args.number:
-                filename = str(activity_id) + os.path.splitext(af.filename)[1]
-            else:
-                filename = af.filename
+            filename = str(activity_id) + got_ext if args.number else af.filename
             f = open(os.path.join(args.directory, filename), "wb")
 
         with f:
             f.writelines(af.content)
 
         # show results
-        print("  Wrote {} from {}".format(f.name, uri), file=stderr)
+        if args.stdout:
+            print("  Wrote {}-format output to <stdout> from {}".format(got_ext, uri), file=stderr)
+        else:
+            print("  Wrote {} from {}".format(f.name, uri), file=stderr)
 
 
 if __name__ == '__main__':

@@ -31,7 +31,7 @@ def main(args=None):
     p.add_argument('-E', '--env', help='Look for ACCESS_TOKEN in environment variable rather than ~/.stravacli')
     g = p.add_argument_group('Activity file details')
     g.add_argument('-p', '--private', action='store_true', help='Make activities private')
-    g.add_argument('-t', '--type', choices=allowed_exts, default=None,
+    g.add_argument('-t', '--type', type=str.lower, choices=[ext[1:] for ext in allowed_exts], default=None,
                    help='Force files to be interpreted as being of given type (default is to autodetect based on name, or contents for stdin)')
     g.add_argument('-x', '--xml-desc', action='store_true', help="Parse name/description fields from GPX and TCX files.")
     g.add_argument('-T', '--title', help='Activity title')
