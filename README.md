@@ -19,8 +19,7 @@ stravaup: error: specify either activity files or -c/--stdin (but not both)
 
 $ usage: stravadown [-h] [-t {tcx,gpx,original}] [-N] [-E ENV]
                     [-c | -d DIRECTORY]
-                    activities [activities ...]
-stravadown: error: the following arguments are required: activities
+                    [activities ...]
 ```
 
 ## Application authorization
@@ -149,13 +148,14 @@ _may_ allow you to circumvent this in some cases.
 ### Options
 
 ```
-usage: stravadown [-h] [-t {tcx,gpx,original}] [-N] [-c | -d DIRECTORY]
-                  activities [activities ...]
+usage: stravadown [-h] [-t {tcx,gpx,original}] [-N] [-s] [-c | -d DIRECTORY]
+                  [activities ...]
 
 Downloads activities from Strava.
 
 positional arguments:
-  activities            Activity IDs to download
+  activities            Activity IDs to download. If unspecified, latest
+                        activity of logged-in user.
 
 optional arguments:
   -h, --help            show this help message and exit

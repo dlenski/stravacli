@@ -13,8 +13,8 @@ from .client_helper import get_authorized_client
 
 def main(args=None):
     p = argparse.ArgumentParser(description='''Downloads activities from Strava.''')
-    p.add_argument('activities', nargs='+', type=int,
-                   help="Activity IDs to download")
+    p.add_argument('activities', nargs='*', type=int,
+                   help="Activity IDs to download. If unspecified, latest activity of logged-in user.")
     p.add_argument('-t', '--type', type=str.lower, choices=('tcx', 'gpx', 'original'), default='original',
                    help='Format in which to download activities (default is their original format')
     p.add_argument('-N', '--number', action='store_true',
@@ -28,8 +28,8 @@ def main(args=None):
                    help="Directory in which to store activity files (default is current directory)")
     args = p.parse_args(args)
 
-    if args.stdout and len(args.activities) != 1:
-        p.error('specify only one activity with -c/--stdout')
+    if args.stdout and len(args.activities) > 1:
+        p.error('specify at most one activity with -c/--stdout')
 
     fmt = getattr(DataFormat, args.type.upper())
     scrape_fmt = DataFormat.TCX if fmt == DataFormat.ORIGINAL else fmt
@@ -47,6 +47,15 @@ def main(args=None):
     print("Authorized to access account of {} {} (id {:d}).".format(athlete.firstname, athlete.lastname, athlete.id))
 
     #####
+
+    if not args.activities:
+        try:
+            act = next(client.get_activities(limit=1))
+        except StopIteration:
+            p.error('No latest activity found for user.')
+        else:
+            print('Found latest activity: {!r}'.format(act.name), file=stderr)
+            args.activities = [act.id]
 
     for ii, activity_id in enumerate(args.activities):
         uri = "http://strava.com/activities/{:d}".format(activity_id)
