@@ -16,7 +16,7 @@ from .QueryGrabber import QueryGrabber
 
 
 def get_authorized_client(access_token=None, need_web_client=True):
-    cs = cid = cat = cat_exp = crt = email = password = None
+    cs = cid = cat = cat_exp = crt = email = password = jwt = None
     if access_token:
         cat = access_token
     else:
@@ -32,6 +32,7 @@ def get_authorized_client(access_token=None, need_web_client=True):
             password_b64 = cp.get('Web', 'PASSWORD_B64', fallback=None)
             if password_b64:
                 password = a2b_base64(password_b64).decode()
+            jwt = cp.get('Web', 'STRAVA_REMEMBER_TOKEN', fallback=None)
 
     if need_web_client:
         if not WebClient:
@@ -70,7 +71,7 @@ def get_authorized_client(access_token=None, need_web_client=True):
 
         if need_web_client:
             try:
-                client = WebClient(cat, email=email, password=password)
+                client = WebClient(cat, email=email, password=password, jwt=jwt)
             except exc.LoginFailed as e:
                 raise RuntimeError("Website credentials were not accepted. Check Web.EMAIL and Web.PASSWORD_B64 in ~/.stravacli.") from e
             except exc.AccessUnauthorized as e:
@@ -86,6 +87,9 @@ def get_authorized_client(access_token=None, need_web_client=True):
                 rewrite = True
             if crt and 'REFRESH_TOKEN' not in cp.options('API') or cp.get('API', 'REFRESH_TOKEN', fallback=None) != crt:
                 cp.set('API', 'REFRESH_TOKEN', crt)
+                rewrite = True
+            if need_web_client and 'STRAVA_REMEMBER_TOKEN' not in cp.options('Web') or cp.get('Web', 'STRAVA_REMEMBER_TOKEN', fallback=None) != client.jwt:
+                cp.set('Web', 'STRAVA_REMEMBER_TOKEN', jwt)
                 rewrite = True
             if rewrite:
                 with open(os.path.expanduser('~/.stravacli'), "w") as cf:

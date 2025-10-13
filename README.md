@@ -46,12 +46,18 @@ client_secret = f00f00f00f00f00f00f00f00f00f00f00f00f00f
 ```
 3. Strava's REST-based API does not allow downloading activity files, so it must be augmented with web-based scraping. For
 this, [`pR0Ps/stravaweblib`](//github.com/pR0Ps/stravaweblib) must be installed, and you must
-also put your registered email address and base64-encoded password in `~/.stravacli`:
+also put your registered email address and base64-encoded password in `~/.stravacli`, or a `strava_remember_token`
+cookie copied from a successful login in a web browser:
 ```ini
 [Web]
 email = my.name@me.com
 password_b64 = cGFzc3dvcmQ=
+strava_remember_token = eyJmb28iOiJiYXIifQ.eyJiYXoiOiJibGFoIn0.deadbeef123
 ```
+
+  ***IMPORTANT:*** Due to changes in Strava web authentication in mid-2025
+  [email-and-password authentication via `stravaweblib` is not currently working](https://github.com/pR0Ps/stravaweblib/issues/15#issuecomment-2980294719),
+  and it is necessary to capture a `strava_remember_token` in order to use `stravaweblib` .
 
   The first time you run [`stravaup`](#uploading-activities) or [`stravadown`](#downloading-activities),
   it will launch a web
